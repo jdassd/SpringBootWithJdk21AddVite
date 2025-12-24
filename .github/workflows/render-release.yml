@@ -9,14 +9,14 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    env:
-      RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
     steps:
       - name: Trigger Render deploy hook
-        if: ${{ env.RENDER_DEPLOY_HOOK != '' }}
+        if: ${{ secrets.RENDER_DEPLOY_HOOK != '' }}
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
         run: |
-          curl --fail --show-error --silent "$RENDER_DEPLOY_HOOK"
+          curl --fail --show-error --silent --location "$RENDER_DEPLOY_HOOK"
       - name: Skip deploy (missing secret)
-        if: ${{ env.RENDER_DEPLOY_HOOK == '' }}
+        if: ${{ secrets.RENDER_DEPLOY_HOOK == '' }}
         run: |
           echo "RENDER_DEPLOY_HOOK is not configured. Set it in repository secrets to enable auto-release."
