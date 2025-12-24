@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: springboot-vite-element
+    env: java
+    plan: free
+    buildCommand: ./scripts/render-build.sh
+    startCommand: java -jar target/*.jar
+    envVars:
+      - key: JAVA_VERSION
+        value: 21
