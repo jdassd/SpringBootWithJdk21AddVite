@@ -39,19 +39,3 @@ docker run --rm -p 8080:8080 springboot-vite-element
 ```
 
 Then open `http://localhost:8080/` (API under `/api/users`).
-
-## Docker Auto Deploy (GitHub Container Registry)
-
-This repo includes a GitHub Actions workflow that builds and pushes the Docker image to
-GitHub Container Registry (GHCR).
-
-Publish triggers:
-- Push to `main` (publishes `ghcr.io/<owner>/springboot-vite-element:main`)
-- Publish a GitHub Release or push a tag like `v1.0.0` (publishes version tags)
-
-Pull and run the published image:
-
-```bash
-docker pull ghcr.io/<owner>/springboot-vite-element:<tag>
-docker run --rm -p 8080:8080 ghcr.io/<owner>/springboot-vite-element:<tag>
-```
