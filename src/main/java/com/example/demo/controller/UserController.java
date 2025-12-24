@@ -1,7 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.entity.User;
-import com.example.demo.mapper.UserMapper;
+import com.example.demo.repository.UserRepository;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,14 +13,19 @@ import java.util.List;
 @RequestMapping("/api/users")
 @CrossOrigin(origins = "*")
 public class UserController {
-    private final UserMapper userMapper;
+    private final UserRepository userRepository;
 
-    public UserController(UserMapper userMapper) {
-        this.userMapper = userMapper;
+    public UserController(UserRepository userRepository) {
+        this.userRepository = userRepository;
     }
 
     @GetMapping
-    public List<User> listUsers() {
-        return userMapper.selectAll();
+    public List<UserSummary> listUsers() {
+        return userRepository.findAll().stream()
+            .map(user -> new UserSummary(user.getId(), user.getUsername(), user.getEmail(), user.getCreatedAt()))
+            .toList();
+    }
+
+    public record UserSummary(Long id, String username, String email, java.time.Instant createdAt) {
     }
 }
