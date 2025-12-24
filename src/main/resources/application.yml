@@ -10,12 +10,14 @@ spring:
   sql:
     init:
       mode: always
-mybatis:
-  configuration:
-    map-underscore-to-camel-case: true
-mapper:
-  mappers: tk.mybatis.mapper.common.Mapper
-  not-empty: false
-  identity: H2
+  mail:
+    host: localhost
+    port: 25
+  jpa:
+    hibernate:
+      ddl-auto: none
 server:
   port: 8080
+app:
+  captcha:
+    debug: false
