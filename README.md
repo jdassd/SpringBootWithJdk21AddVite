@@ -24,14 +24,18 @@ npm run dev
 
 The UI will be available at `http://localhost:5173` and proxies `/api` to the backend.
 
-## Deployment (Render Free)
+## Docker Deployment
 
-This repo includes a Render setup that builds the Vite frontend and packages it into the Spring Boot JAR.
+Build the image (frontend + backend in one container):
 
-1. Create a new **Web Service** on Render and connect this repository.
-2. Ensure Render detects `render.yaml` and uses it.
-3. Add a deploy hook in Render and copy the URL.
-4. In GitHub, set the repository secret `RENDER_DEPLOY_HOOK` with the deploy hook URL.
+```bash
+docker build -t springboot-vite-element .
+```
 
-On every push to `main` (or via manual dispatch), GitHub Actions triggers the Render deploy hook to publish the latest version.
+Run the container:
 
+```bash
+docker run --rm -p 8080:8080 springboot-vite-element
+```
+
+Then open `http://localhost:8080/` (API under `/api/users`).
