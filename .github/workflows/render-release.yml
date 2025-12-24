@@ -15,7 +15,7 @@ jobs:
       - name: Trigger Render deploy hook
         if: ${{ env.RENDER_DEPLOY_HOOK != '' }}
         run: |
-          curl --fail --show-error --silent "$RENDER_DEPLOY_HOOK"
+          curl --fail --show-error --silent --location "$RENDER_DEPLOY_HOOK"
       - name: Skip deploy (missing secret)
         if: ${{ env.RENDER_DEPLOY_HOOK == '' }}
         run: |
