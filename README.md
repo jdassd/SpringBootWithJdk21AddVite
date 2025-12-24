@@ -34,3 +34,4 @@ This repo includes a Render setup that builds the Vite frontend and packages it 
 4. In GitHub, set the repository secret `RENDER_DEPLOY_HOOK` with the deploy hook URL.
 
 On every push to `main` (or via manual dispatch), GitHub Actions triggers the Render deploy hook to publish the latest version.
+
