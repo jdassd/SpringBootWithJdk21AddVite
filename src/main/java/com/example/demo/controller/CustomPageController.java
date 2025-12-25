@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.entity.CustomPage;
 import com.example.demo.repository.CustomPageRepository;
+import com.example.demo.security.ContentSanitizer;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.web.bind.annotation.*;
@@ -14,9 +15,11 @@ import java.util.List;
 @CrossOrigin(origins = "*")
 public class CustomPageController {
     private final CustomPageRepository pageRepository;
+    private final ContentSanitizer sanitizer;
 
-    public CustomPageController(CustomPageRepository pageRepository) {
+    public CustomPageController(CustomPageRepository pageRepository, ContentSanitizer sanitizer) {
         this.pageRepository = pageRepository;
+        this.sanitizer = sanitizer;
     }
 
     @GetMapping
@@ -40,8 +43,8 @@ public class CustomPageController {
         page.setId(System.currentTimeMillis());
         page.setTitle(request.title());
         page.setSlug(request.slug());
-        page.setContent(request.content());
-        page.setCustomCss(request.customCss());
+        page.setContent(sanitizer.sanitizeRichText(request.content()));
+        page.setCustomCss(sanitizer.sanitizeCss(request.customCss()));
         page.setCreatedAt(Instant.now());
         page.setUpdatedAt(Instant.now());
         pageRepository.save(page);
@@ -53,8 +56,8 @@ public class CustomPageController {
         CustomPage page = pageRepository.findById(id).orElseThrow();
         page.setTitle(request.title());
         page.setSlug(request.slug());
-        page.setContent(request.content());
-        page.setCustomCss(request.customCss());
+        page.setContent(sanitizer.sanitizeRichText(request.content()));
+        page.setCustomCss(sanitizer.sanitizeCss(request.customCss()));
         page.setUpdatedAt(Instant.now());
         pageRepository.save(page);
         return page;

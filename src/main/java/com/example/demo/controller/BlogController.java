@@ -8,6 +8,7 @@ import com.example.demo.repository.BlogCommentRepository;
 import com.example.demo.repository.BlogPostRepository;
 import com.example.demo.repository.BlogPostTagRepository;
 import com.example.demo.repository.BlogTagRepository;
+import com.example.demo.security.ContentSanitizer;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -27,13 +28,16 @@ public class BlogController {
     private final BlogTagRepository tagRepository;
     private final BlogPostTagRepository postTagRepository;
     private final BlogCommentRepository commentRepository;
+    private final ContentSanitizer sanitizer;
 
     public BlogController(BlogPostRepository postRepository, BlogTagRepository tagRepository,
-                          BlogPostTagRepository postTagRepository, BlogCommentRepository commentRepository) {
+                          BlogPostTagRepository postTagRepository, BlogCommentRepository commentRepository,
+                          ContentSanitizer sanitizer) {
         this.postRepository = postRepository;
         this.tagRepository = tagRepository;
         this.postTagRepository = postTagRepository;
         this.commentRepository = commentRepository;
+        this.sanitizer = sanitizer;
     }
 
     @GetMapping("/posts")
@@ -57,7 +61,7 @@ public class BlogController {
         post.setId(System.currentTimeMillis());
         post.setTitle(request.title());
         post.setSlug(slugify(request.title()));
-        post.setContent(request.content());
+        post.setContent(sanitizer.sanitizeRichText(request.content()));
         post.setStatus(request.status());
         post.setCreatedAt(Instant.now());
         post.setUpdatedAt(Instant.now());
@@ -71,7 +75,7 @@ public class BlogController {
         BlogPost post = postRepository.findById(id).orElseThrow();
         post.setTitle(request.title());
         post.setSlug(slugify(request.title()));
-        post.setContent(request.content());
+        post.setContent(sanitizer.sanitizeRichText(request.content()));
         post.setStatus(request.status());
         post.setUpdatedAt(Instant.now());
         postRepository.save(post);
@@ -95,8 +99,8 @@ public class BlogController {
         BlogComment comment = new BlogComment();
         comment.setId(System.currentTimeMillis());
         comment.setPostId(id);
-        comment.setAuthor(request.author());
-        comment.setContent(request.content());
+        comment.setAuthor(sanitizer.sanitizePlainText(request.author()));
+        comment.setContent(sanitizer.sanitizeRichText(request.content()));
         comment.setCreatedAt(Instant.now());
         commentRepository.save(comment);
         return comment;
