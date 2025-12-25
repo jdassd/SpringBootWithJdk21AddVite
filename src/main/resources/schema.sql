@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS users (
-    id BIGINT PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(64) NOT NULL,
     email VARCHAR(150) NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
@@ -10,7 +10,8 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 CREATE TABLE IF NOT EXISTS blog_posts (
-    id BIGINT PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT,
     title VARCHAR(200) NOT NULL,
     slug VARCHAR(200) NOT NULL,
     content CLOB NOT NULL,
@@ -20,18 +21,18 @@ CREATE TABLE IF NOT EXISTS blog_posts (
 );
 
 CREATE TABLE IF NOT EXISTS blog_tags (
-    id BIGINT PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS blog_post_tags (
-    id BIGINT PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
     post_id BIGINT NOT NULL,
     tag_id BIGINT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS blog_comments (
-    id BIGINT PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
     post_id BIGINT NOT NULL,
     author VARCHAR(120) NOT NULL,
     content CLOB NOT NULL,
@@ -39,7 +40,8 @@ CREATE TABLE IF NOT EXISTS blog_comments (
 );
 
 CREATE TABLE IF NOT EXISTS navigation_links (
-    id BIGINT PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT,
     name VARCHAR(120) NOT NULL,
     url VARCHAR(400) NOT NULL,
     icon VARCHAR(120),
@@ -48,14 +50,16 @@ CREATE TABLE IF NOT EXISTS navigation_links (
 );
 
 CREATE TABLE IF NOT EXISTS search_engines (
-    id BIGINT PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT,
     name VARCHAR(120) NOT NULL,
     query_url VARCHAR(400) NOT NULL,
     is_default BOOLEAN DEFAULT FALSE
 );
 
 CREATE TABLE IF NOT EXISTS custom_pages (
-    id BIGINT PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT,
     title VARCHAR(200) NOT NULL,
     slug VARCHAR(200) NOT NULL,
     content CLOB NOT NULL,
@@ -65,7 +69,8 @@ CREATE TABLE IF NOT EXISTS custom_pages (
 );
 
 CREATE TABLE IF NOT EXISTS gallery_albums (
-    id BIGINT PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT,
     title VARCHAR(200) NOT NULL,
     description CLOB,
     cover_url VARCHAR(400),
@@ -73,7 +78,7 @@ CREATE TABLE IF NOT EXISTS gallery_albums (
 );
 
 CREATE TABLE IF NOT EXISTS gallery_photos (
-    id BIGINT PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
     album_id BIGINT NOT NULL,
     title VARCHAR(200) NOT NULL,
     image_url VARCHAR(400) NOT NULL,
@@ -82,7 +87,8 @@ CREATE TABLE IF NOT EXISTS gallery_photos (
 );
 
 CREATE TABLE IF NOT EXISTS tasks (
-    id BIGINT PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT,
     title VARCHAR(200) NOT NULL,
     due_date DATE,
     reminder_time TIMESTAMP,
@@ -92,7 +98,8 @@ CREATE TABLE IF NOT EXISTS tasks (
 );
 
 CREATE TABLE IF NOT EXISTS mail_messages (
-    id BIGINT PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT,
     direction VARCHAR(32) NOT NULL,
     from_address VARCHAR(150) NOT NULL,
     to_address VARCHAR(150) NOT NULL,
