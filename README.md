@@ -1,20 +1,20 @@
 # Spring Boot JDK 21 + MyBatis + TkMapper + Vite + Element Plus
 
-This repository provides a runnable starter with:
-- Spring Boot 3 (JDK 21)
+本仓库提供一个可运行的示例工程，包含：
+- Spring Boot 3（JDK 21）
 - MyBatis + TkMapper
-- H2 in-memory database with sample data
-- Vite + Vue 3 + Element Plus frontend
+- H2 内存数据库及示例数据
+- Vite + Vue 3 + Element Plus 前端
 
-## Backend
+## 后端
 
 ```bash
 mvn spring-boot:run
 ```
 
-The API will be available at `http://localhost:8080/api/users`.
+接口地址：`http://localhost:8080/api/users`。
 
-## Frontend
+## 前端
 
 ```bash
 cd frontend
@@ -22,7 +22,7 @@ npm install
 npm run dev
 ```
 
-The UI will be available at `http://localhost:5173` and proxies `/api` to the backend.
+UI 地址：`http://localhost:5173`，并将 `/api` 代理到后端。
 
 ## Docker Deployment
 
