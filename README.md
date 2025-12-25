@@ -24,6 +24,10 @@ npm run dev
 
 UI 地址：`http://localhost:5173`，并将 `/api` 代理到后端。
 
+## 管理接口鉴权
+
+管理类接口需要在请求头携带 `X-Auth-Token`（登录接口返回的 token）。前端管理后台会在进入前检查登录状态，并在请求头中补充该字段。
+
 ## Docker Deployment
 
 Build the image (frontend + backend in one container):
