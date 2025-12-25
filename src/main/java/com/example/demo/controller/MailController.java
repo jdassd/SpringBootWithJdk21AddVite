@@ -64,6 +64,22 @@ public class MailController {
         return stored;
     }
 
+    @PutMapping("/{id}")
+    public MailMessage update(@PathVariable Long id, @Valid @RequestBody MailRequest request) {
+        MailMessage stored = mailRepository.findById(id).orElseThrow();
+        stored.setFromAddress(request.fromAddress());
+        stored.setToAddress(request.toAddress());
+        stored.setSubject(request.subject());
+        stored.setBody(request.body());
+        mailRepository.save(stored);
+        return stored;
+    }
+
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable Long id) {
+        mailRepository.deleteById(id);
+    }
+
     public record MailRequest(
         @Email @NotBlank String fromAddress,
         @Email @NotBlank String toAddress,
