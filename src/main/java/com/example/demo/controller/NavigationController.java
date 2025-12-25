@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.entity.NavigationLink;
 import com.example.demo.repository.NavigationLinkRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.web.bind.annotation.*;
@@ -20,27 +21,29 @@ public class NavigationController {
     }
 
     @GetMapping
-    public List<NavigationLink> listLinks() {
-        return linkRepository.findAll().stream()
-            .sorted(Comparator.comparing(NavigationLink::getGroupName, Comparator.nullsLast(String::compareTo))
-                .thenComparing(link -> link.getSortOrder() == null ? 0 : link.getSortOrder()))
-            .toList();
+    public List<NavigationLink> listLinks(HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        return linkRepository.findByUserId(userId).stream()
+                .sorted(Comparator.comparing(NavigationLink::getGroupName, Comparator.nullsLast(String::compareTo))
+                        .thenComparing(link -> link.getSortOrder() == null ? 0 : link.getSortOrder()))
+                .toList();
     }
 
     @GetMapping("/public")
-    public List<NavigationLink> listPublicLinks() {
-        return listLinks();
+    public List<NavigationLink> listPublicLinks(HttpServletRequest request) {
+        return listLinks(request);
     }
 
     @PostMapping
-    public NavigationLink create(@Valid @RequestBody NavigationRequest request) {
+    public NavigationLink create(HttpServletRequest request, @Valid @RequestBody NavigationRequest navigationRequest) {
+        Long userId = (Long) request.getAttribute("userId");
         NavigationLink link = new NavigationLink();
-        link.setId(System.currentTimeMillis());
-        link.setName(request.name());
-        link.setUrl(request.url());
-        link.setIcon(request.icon());
-        link.setGroupName(request.groupName());
-        link.setSortOrder(request.sortOrder());
+        link.setUserId(userId);
+        link.setName(navigationRequest.name());
+        link.setUrl(navigationRequest.url());
+        link.setIcon(navigationRequest.icon());
+        link.setGroupName(navigationRequest.groupName());
+        link.setSortOrder(navigationRequest.sortOrder());
         linkRepository.save(link);
         return link;
     }
@@ -63,11 +66,10 @@ public class NavigationController {
     }
 
     public record NavigationRequest(
-        @NotBlank String name,
-        @NotBlank String url,
-        String icon,
-        String groupName,
-        Integer sortOrder
-    ) {
+            @NotBlank String name,
+            @NotBlank String url,
+            String icon,
+            String groupName,
+            Integer sortOrder) {
     }
 }

@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.entity.MailMessage;
 import com.example.demo.repository.MailMessageRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -25,40 +26,43 @@ public class MailController {
     }
 
     @GetMapping
-    public List<MailMessage> listMessages() {
-        return mailRepository.findAll();
+    public List<MailMessage> listMessages(HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        return mailRepository.findByUserId(userId);
     }
 
     @PostMapping("/send")
-    public MailMessage send(@Valid @RequestBody MailRequest request) {
+    public MailMessage send(HttpServletRequest request, @Valid @RequestBody MailRequest mailRequest) {
+        Long userId = (Long) request.getAttribute("userId");
         SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(request.fromAddress());
-        message.setTo(request.toAddress());
-        message.setSubject(request.subject());
-        message.setText(request.body());
+        message.setFrom(mailRequest.fromAddress());
+        message.setTo(mailRequest.toAddress());
+        message.setSubject(mailRequest.subject());
+        message.setText(mailRequest.body());
         mailSender.send(message);
 
         MailMessage stored = new MailMessage();
-        stored.setId(System.currentTimeMillis());
+        stored.setUserId(userId);
         stored.setDirection("OUTBOUND");
-        stored.setFromAddress(request.fromAddress());
-        stored.setToAddress(request.toAddress());
-        stored.setSubject(request.subject());
-        stored.setBody(request.body());
+        stored.setFromAddress(mailRequest.fromAddress());
+        stored.setToAddress(mailRequest.toAddress());
+        stored.setSubject(mailRequest.subject());
+        stored.setBody(mailRequest.body());
         stored.setCreatedAt(Instant.now());
         mailRepository.save(stored);
         return stored;
     }
 
     @PostMapping("/receive")
-    public MailMessage receive(@Valid @RequestBody MailRequest request) {
+    public MailMessage receive(HttpServletRequest request, @Valid @RequestBody MailRequest mailRequest) {
+        Long userId = (Long) request.getAttribute("userId");
         MailMessage stored = new MailMessage();
-        stored.setId(System.currentTimeMillis());
+        stored.setUserId(userId);
         stored.setDirection("INBOUND");
-        stored.setFromAddress(request.fromAddress());
-        stored.setToAddress(request.toAddress());
-        stored.setSubject(request.subject());
-        stored.setBody(request.body());
+        stored.setFromAddress(mailRequest.fromAddress());
+        stored.setToAddress(mailRequest.toAddress());
+        stored.setSubject(mailRequest.subject());
+        stored.setBody(mailRequest.body());
         stored.setCreatedAt(Instant.now());
         mailRepository.save(stored);
         return stored;
@@ -81,10 +85,9 @@ public class MailController {
     }
 
     public record MailRequest(
-        @Email @NotBlank String fromAddress,
-        @Email @NotBlank String toAddress,
-        @NotBlank String subject,
-        @NotBlank String body
-    ) {
+            @Email @NotBlank String fromAddress,
+            @Email @NotBlank String toAddress,
+            @NotBlank String subject,
+            @NotBlank String body) {
     }
 }

@@ -3,6 +3,7 @@ package com.example.demo.controller;
 import com.example.demo.entity.CustomPage;
 import com.example.demo.repository.CustomPageRepository;
 import com.example.demo.security.ContentSanitizer;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.web.bind.annotation.*;
@@ -23,28 +24,33 @@ public class CustomPageController {
     }
 
     @GetMapping
-    public List<CustomPage> listPages() {
-        return pageRepository.findAll();
+    public List<CustomPage> listPages(HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        return pageRepository.findByUserId(userId);
     }
 
     @GetMapping("/public")
-    public List<CustomPage> listPublicPages() {
-        return pageRepository.findAll();
+    public List<CustomPage> listPublicPages(HttpServletRequest request) {
+        return listPages(request);
     }
 
     @GetMapping("/public/{slug}")
     public CustomPage getBySlug(@PathVariable String slug) {
+        // NOTE: slugs might need to be scoped by userId as well if multiple users use
+        // the same slug.
+        // For now, we remain parity but fix the lack of isolation in lists.
         return pageRepository.findBySlug(slug).orElse(null);
     }
 
     @PostMapping
-    public CustomPage create(@Valid @RequestBody PageRequest request) {
+    public CustomPage create(HttpServletRequest request, @Valid @RequestBody PageRequest pageRequest) {
+        Long userId = (Long) request.getAttribute("userId");
         CustomPage page = new CustomPage();
-        page.setId(System.currentTimeMillis());
-        page.setTitle(request.title());
-        page.setSlug(request.slug());
-        page.setContent(sanitizer.sanitizeRichText(request.content()));
-        page.setCustomCss(sanitizer.sanitizeCss(request.customCss()));
+        page.setUserId(userId);
+        page.setTitle(pageRequest.title());
+        page.setSlug(pageRequest.slug());
+        page.setContent(sanitizer.sanitizeRichText(pageRequest.content()));
+        page.setCustomCss(sanitizer.sanitizeCss(pageRequest.customCss()));
         page.setCreatedAt(Instant.now());
         page.setUpdatedAt(Instant.now());
         pageRepository.save(page);
@@ -69,10 +75,9 @@ public class CustomPageController {
     }
 
     public record PageRequest(
-        @NotBlank String title,
-        @NotBlank String slug,
-        @NotBlank String content,
-        String customCss
-    ) {
+            @NotBlank String title,
+            @NotBlank String slug,
+            @NotBlank String content,
+            String customCss) {
     }
 }

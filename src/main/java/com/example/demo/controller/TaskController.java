@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.entity.TaskItem;
 import com.example.demo.repository.TaskRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.web.bind.annotation.*;
@@ -22,17 +23,19 @@ public class TaskController {
     }
 
     @GetMapping
-    public List<TaskItem> listTasks() {
-        return taskRepository.findAll();
+    public List<TaskItem> listTasks(HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        return taskRepository.findByUserId(userId);
     }
 
     @PostMapping
-    public TaskItem create(@Valid @RequestBody TaskRequest request) {
+    public TaskItem create(HttpServletRequest request, @Valid @RequestBody TaskRequest requestData) {
+        Long userId = (Long) request.getAttribute("userId");
         TaskItem task = new TaskItem();
-        task.setId(System.currentTimeMillis());
-        task.setTitle(request.title());
-        task.setDueDate(request.dueDate());
-        task.setReminderTime(request.reminderTime());
+        task.setUserId(userId);
+        task.setTitle(requestData.title());
+        task.setDueDate(requestData.dueDate());
+        task.setReminderTime(requestData.reminderTime());
         task.setStatus("PENDING");
         task.setCreatedAt(Instant.now());
         taskRepository.save(task);
@@ -64,7 +67,9 @@ public class TaskController {
     }
 
     @GetMapping("/summary")
-    public TaskSummary summary(@RequestParam String period, @RequestParam(required = false) LocalDate date) {
+    public TaskSummary summary(HttpServletRequest request, @RequestParam String period,
+            @RequestParam(required = false) LocalDate date) {
+        Long userId = (Long) request.getAttribute("userId");
         LocalDate base = date == null ? LocalDate.now() : date;
         LocalDate start;
         LocalDate end;
@@ -83,16 +88,15 @@ public class TaskController {
             }
             default -> throw new IllegalArgumentException("Unsupported period");
         }
-        int completed = taskRepository.countCompletedBetween(start, end);
-        int total = taskRepository.countTotalBetween(start, end);
+        int completed = taskRepository.countCompletedBetween(userId, start, end);
+        int total = taskRepository.countTotalBetween(userId, start, end);
         return new TaskSummary(period, start, end, completed, total);
     }
 
     public record TaskRequest(
-        @NotBlank String title,
-        LocalDate dueDate,
-        Instant reminderTime
-    ) {
+            @NotBlank String title,
+            LocalDate dueDate,
+            Instant reminderTime) {
     }
 
     public record TaskSummary(String period, LocalDate start, LocalDate end, int completed, int total) {

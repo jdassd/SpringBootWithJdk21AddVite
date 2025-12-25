@@ -4,6 +4,7 @@ import com.example.demo.entity.GalleryAlbum;
 import com.example.demo.entity.GalleryPhoto;
 import com.example.demo.repository.GalleryAlbumRepository;
 import com.example.demo.repository.GalleryPhotoRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.web.bind.annotation.*;
@@ -24,22 +25,24 @@ public class GalleryController {
     }
 
     @GetMapping("/albums")
-    public List<GalleryAlbum> listAlbums() {
-        return albumRepository.findAll();
+    public List<GalleryAlbum> listAlbums(HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        return albumRepository.findByUserId(userId);
     }
 
     @GetMapping("/public/albums")
-    public List<GalleryAlbum> listPublicAlbums() {
-        return albumRepository.findAll();
+    public List<GalleryAlbum> listPublicAlbums(HttpServletRequest request) {
+        return listAlbums(request);
     }
 
     @PostMapping("/albums")
-    public GalleryAlbum createAlbum(@Valid @RequestBody AlbumRequest request) {
+    public GalleryAlbum createAlbum(HttpServletRequest request, @Valid @RequestBody AlbumRequest albumRequest) {
+        Long userId = (Long) request.getAttribute("userId");
         GalleryAlbum album = new GalleryAlbum();
-        album.setId(System.currentTimeMillis());
-        album.setTitle(request.title());
-        album.setDescription(request.description());
-        album.setCoverUrl(request.coverUrl());
+        album.setUserId(userId);
+        album.setTitle(albumRequest.title());
+        album.setDescription(albumRequest.description());
+        album.setCoverUrl(albumRequest.coverUrl());
         album.setCreatedAt(Instant.now());
         albumRepository.save(album);
         return album;
@@ -73,7 +76,6 @@ public class GalleryController {
     @PostMapping("/albums/{albumId}/photos")
     public GalleryPhoto createPhoto(@PathVariable Long albumId, @Valid @RequestBody PhotoRequest request) {
         GalleryPhoto photo = new GalleryPhoto();
-        photo.setId(System.nanoTime());
         photo.setAlbumId(albumId);
         photo.setTitle(request.title());
         photo.setImageUrl(request.imageUrl());
@@ -89,16 +91,14 @@ public class GalleryController {
     }
 
     public record AlbumRequest(
-        @NotBlank String title,
-        String description,
-        String coverUrl
-    ) {
+            @NotBlank String title,
+            String description,
+            String coverUrl) {
     }
 
     public record PhotoRequest(
-        @NotBlank String title,
-        @NotBlank String imageUrl,
-        Instant takenAt
-    ) {
+            @NotBlank String title,
+            @NotBlank String imageUrl,
+            Instant takenAt) {
     }
 }

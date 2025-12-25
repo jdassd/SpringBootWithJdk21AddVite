@@ -40,7 +40,6 @@ public class AuthController {
         validateCaptcha(request.captchaToken(), request.captchaCode());
         ensureUnique(request.username(), request.email());
         User user = new User();
-        user.setId(System.currentTimeMillis());
         user.setUsername(request.username());
         user.setEmail(request.email());
         user.setPasswordHash(passwordEncoder.encode(request.password()));
@@ -56,7 +55,7 @@ public class AuthController {
     public AuthResponse login(@Valid @RequestBody LoginRequest request) {
         validateCaptcha(request.captchaToken(), request.captchaCode());
         User user = userRepository.findByUsername(request.username())
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials"));
         if (user.getLockedUntil() != null && user.getLockedUntil().isAfter(Instant.now())) {
             throw new ResponseStatusException(HttpStatus.LOCKED, "Account locked");
         }
@@ -98,20 +97,18 @@ public class AuthController {
     }
 
     public record RegisterRequest(
-        @NotBlank @Size(min = 3, max = 32) String username,
-        @Email @NotBlank String email,
-        @NotBlank @Size(min = 8, max = 64) String password,
-        @NotBlank String captchaToken,
-        @NotBlank String captchaCode
-    ) {
+            @NotBlank @Size(min = 3, max = 32) String username,
+            @Email @NotBlank String email,
+            @NotBlank @Size(min = 8, max = 64) String password,
+            @NotBlank String captchaToken,
+            @NotBlank String captchaCode) {
     }
 
     public record LoginRequest(
-        @NotBlank String username,
-        @NotBlank String password,
-        @NotBlank String captchaToken,
-        @NotBlank String captchaCode
-    ) {
+            @NotBlank String username,
+            @NotBlank String password,
+            @NotBlank String captchaToken,
+            @NotBlank String captchaCode) {
     }
 
     public record AuthResponse(String token, String username, String role) {
