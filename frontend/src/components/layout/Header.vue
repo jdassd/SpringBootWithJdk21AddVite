@@ -31,7 +31,8 @@
           </div>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item @click="$emit('logout')">退出登录</el-dropdown-item>
+              <el-dropdown-item @click="$emit('nav', 'profile')">个人中心</el-dropdown-item>
+              <el-dropdown-item divided @click="$emit('logout')">退出登录</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
@@ -51,12 +52,13 @@ import { Search, UserFilled } from '@element-plus/icons-vue';
 const props = defineProps({
   authToken: String,
   username: String,
+  avatarUrl: String,
   searchEngines: Array,
   defaultEngine: Object,
   showSearch: Boolean
 });
 
-const emit = defineEmits(['search', 'logout', 'openAuth']);
+const emit = defineEmits(['search', 'logout', 'openAuth', 'nav']);
 
 const searchQuery = ref('');
 const selectedEngine = ref(props.defaultEngine);

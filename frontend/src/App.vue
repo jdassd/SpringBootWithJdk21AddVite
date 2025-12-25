@@ -16,6 +16,7 @@
         @search="doSearch"
         @logout="logout"
         @open-auth="openAuthDialog"
+        @nav="currentView = $event"
       />
       
       <el-main class="main-content">
@@ -96,6 +97,7 @@
               </el-card>
 
               <AdminPanel v-if="currentView === 'admin' && isAdmin" :is-admin="isAdmin" />
+              <ProfileView v-if="currentView === 'profile'" />
             </section>
           </div>
         </transition>
@@ -147,6 +149,7 @@ import Header from './components/layout/Header.vue';
 import HomeView from './components/views/HomeView.vue';
 import BlogView from './components/views/BlogView.vue';
 import GalleryView from './components/views/GalleryView.vue';
+import ProfileView from './components/views/ProfileView.vue';
 import AdminPanel from './components/admin/AdminPanel.vue';
 
 // --- State ---
@@ -179,14 +182,16 @@ const viewTitle = computed(() => ({
   blog: '博客内容',
   gallery: '摄影展',
   tasks: '任务提醒',
-  admin: '管理后台'
+  admin: '管理后台',
+  profile: '个人中心'
 }[currentView.value] || ''));
 
 const viewDescription = computed(() => ({
   navigation: '精选常用工具网站',
   blog: '探索最新技术文章',
   gallery: '浏览精选摄影作品',
-  tasks: '管理您的每日待办'
+  tasks: '管理您的每日待办',
+  profile: '个性化资料与安全设置'
 }[currentView.value] || ''));
 
 // --- Methods ---

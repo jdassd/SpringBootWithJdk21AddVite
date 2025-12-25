@@ -18,6 +18,8 @@ public class User {
     private String email;
     private String passwordHash;
     private String role;
+    private String avatarUrl;
+    private String bio;
     private Integer failedAttempts;
     private Instant lockedUntil;
     private Instant createdAt;
@@ -60,6 +62,22 @@ public class User {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public String getAvatarUrl() {
+        return avatarUrl;
+    }
+
+    public void setAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
+    }
+
+    public String getBio() {
+        return bio;
+    }
+
+    public void setBio(String bio) {
+        this.bio = bio;
     }
 
     public Integer getFailedAttempts() {

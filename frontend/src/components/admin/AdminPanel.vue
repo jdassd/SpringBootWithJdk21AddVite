@@ -65,7 +65,6 @@ import {
   List,
   Message,
   Picture,
-  Picture,
   Search,
   UserFilled,
 } from '@element-plus/icons-vue';
