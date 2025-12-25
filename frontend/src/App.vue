@@ -135,7 +135,18 @@
           </el-form>
         </el-tab-pane>
         <el-tab-pane label="注册" name="register">
-           <!-- Simplified register form -->
+          <el-form :model="registerForm" label-position="top">
+            <el-form-item label="用户名"><el-input v-model="registerForm.username" placeholder="3-32位字符" /></el-form-item>
+            <el-form-item label="电子邮箱"><el-input v-model="registerForm.email" placeholder="example@mail.com" /></el-form-item>
+            <el-form-item label="设置密码"><el-input v-model="registerForm.password" type="password" show-password placeholder="至少8位" /></el-form-item>
+            <el-form-item label="验证码">
+              <div class="captcha-box">
+                <el-input v-model="registerForm.captchaCode" />
+                <img :src="captchaImage(loginCaptcha)" @click="refreshCaptcha('register')" v-if="loginCaptcha" />
+              </div>
+            </el-form-item>
+            <el-button type="primary" @click="register" style="width: 100%">提 交 注 册</el-button>
+          </el-form>
         </el-tab-pane>
       </el-tabs>
     </el-dialog>
@@ -170,6 +181,7 @@ const username = ref(localStorage.getItem('username') || '');
 
 // Forms
 const loginForm = ref({ username: '', password: '', captchaCode: '' });
+const registerForm = ref({ username: '', email: '', password: '', captchaCode: '' });
 const taskForm = ref({ title: '', dueDate: null });
 const loginCaptcha = ref(null);
 
@@ -258,8 +270,29 @@ const login = async () => {
     authDialogVisible.value = false;
     ElMessage.success('登录成功');
   } catch (e) {
-    ElMessage.error('登录失败');
+    ElMessage.error(e.response?.data?.message || '登录失败');
     refreshCaptcha('login');
+  }
+};
+
+const register = async () => {
+  try {
+    const res = await axios.post('/api/auth/register', {
+      ...registerForm.value,
+      captchaToken: loginCaptcha.value.token
+    });
+    authToken.value = res.data.token;
+    username.value = res.data.username;
+    userRole.value = res.data.role;
+    localStorage.setItem('authToken', authToken.value);
+    localStorage.setItem('userRole', userRole.value);
+    localStorage.setItem('username', username.value);
+    updateAuthHeader();
+    authDialogVisible.value = false;
+    ElMessage.success('注册成功并已自动登录');
+  } catch (e) {
+    ElMessage.error(e.response?.data?.message || '注册失败');
+    refreshCaptcha('register');
   }
 };
 
