@@ -1,20 +1,20 @@
 # Spring Boot JDK 21 + MyBatis + TkMapper + Vite + Element Plus
 
-This repository provides a runnable starter with:
-- Spring Boot 3 (JDK 21)
+本仓库提供一个可运行的示例工程，包含：
+- Spring Boot 3（JDK 21）
 - MyBatis + TkMapper
-- H2 in-memory database with sample data
-- Vite + Vue 3 + Element Plus frontend
+- H2 内存数据库及示例数据
+- Vite + Vue 3 + Element Plus 前端
 
-## Backend
+## 后端
 
 ```bash
 mvn spring-boot:run
 ```
 
-The API will be available at `http://localhost:8080/api/users`.
+接口地址：`http://localhost:8080/api/users`。
 
-## Frontend
+## 前端
 
 ```bash
 cd frontend
@@ -22,16 +22,39 @@ npm install
 npm run dev
 ```
 
-The UI will be available at `http://localhost:5173` and proxies `/api` to the backend.
+UI 地址：`http://localhost:5173`，并将 `/api` 代理到后端。
 
-## Deployment (Render Free)
+## Docker 部署
 
-This repo includes a Render setup that builds the Vite frontend and packages it into the Spring Boot JAR.
+构建镜像（前端 + 后端打到同一个容器中）：
 
-1. Create a new **Web Service** on Render and connect this repository.
-2. Ensure Render detects `render.yaml` and uses it.
-3. Add a deploy hook in Render and copy the URL.
-4. In GitHub, set the repository secret `RENDER_DEPLOY_HOOK` with the deploy hook URL.
+```bash
+docker build -t springboot-vite-element .
+```
 
-On every push to `main` (or via manual dispatch), GitHub Actions triggers the Render deploy hook to publish the latest version.
+运行容器：
 
+```bash
+docker run --rm -p 8080:8080 springboot-vite-element
+```
+
+访问 `http://localhost:8080/`（接口在 `/api/users`）。
+
+> 说明：Dockerfile 使用 GHCR 上的基础镜像（`ghcr.io/bitnami/*`），避免拉取 Docker Hub 时
+> 可能遇到的认证/网络问题。构建阶段额外设置了 `JAVA_TOOL_OPTIONS="-XX:UseSVE=0"`，用于
+> 规避部分 ARM 环境中 JDK 启动时触发 SIGILL 的问题。
+
+## Docker 自动发布（GitHub Container Registry）
+
+仓库内置 GitHub Actions 工作流，会自动构建并推送镜像到 GHCR。
+
+触发方式：
+- 推送到 `main`（发布 `ghcr.io/<owner>/springboot-vite-element:main`）
+- 发布 GitHub Release 或推送 `v1.0.0` 这类 tag（发布版本 tag）
+
+拉取并运行发布后的镜像：
+
+```bash
+docker pull ghcr.io/<owner>/springboot-vite-element:<tag>
+docker run --rm -p 8080:8080 ghcr.io/<owner>/springboot-vite-element:<tag>
+```
