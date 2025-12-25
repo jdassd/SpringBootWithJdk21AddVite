@@ -11,9 +11,9 @@ public class AuthTokenStore {
     private final Map<String, AuthSession> sessions = new ConcurrentHashMap<>();
     private final Duration ttl = Duration.ofHours(6);
 
-    public String createToken(Long userId) {
+    public String createToken(Long userId, String role) {
         String token = UUID.randomUUID().toString();
-        sessions.put(token, new AuthSession(userId, Instant.now().plus(ttl)));
+        sessions.put(token, new AuthSession(userId, role, Instant.now().plus(ttl)));
         return token;
     }
 
@@ -29,12 +29,16 @@ public class AuthTokenStore {
         return Optional.of(session);
     }
 
+    public Optional<String> getRole(String token) {
+        return getSession(token).map(AuthSession::role);
+    }
+
     public void revoke(String token) {
         if (token != null) {
             sessions.remove(token);
         }
     }
 
-    public record AuthSession(Long userId, Instant expiresAt) {
+    public record AuthSession(Long userId, String role, Instant expiresAt) {
     }
 }

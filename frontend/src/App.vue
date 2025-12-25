@@ -349,11 +349,12 @@
               <h4>{{ item.title }}</h4>
               <span>{{ item.description }}</span>
             </div>
-            <div class="admin-actions">
+            <div v-if="isAdmin" class="admin-actions">
               <el-button size="small" type="primary" plain>新增</el-button>
               <el-button size="small" plain>编辑</el-button>
               <el-button size="small" type="danger" plain>删除</el-button>
             </div>
+            <el-tag v-else type="info" effect="light">仅管理员可操作</el-tag>
           </div>
         </div>
       </el-card>
@@ -381,6 +382,7 @@ const taskSummary = ref(null);
 const mailMessages = ref([]);
 
 const authToken = ref(localStorage.getItem('authToken') || '');
+const userRole = ref(localStorage.getItem('userRole') || '');
 const username = ref(localStorage.getItem('username') || '');
 const authTab = ref('login');
 
@@ -469,6 +471,8 @@ const viewDescription = computed(() => {
       return '选择进入独立功能主页。';
   }
 });
+
+const isAdmin = computed(() => userRole.value === 'ADMIN');
 
 const updateAuthHeader = () => {
   if (authToken.value) {
@@ -567,8 +571,10 @@ const login = async () => {
     });
     authToken.value = response.data.token;
     username.value = response.data.username;
+    userRole.value = response.data.role;
     localStorage.setItem('authToken', authToken.value);
     localStorage.setItem('username', username.value);
+    localStorage.setItem('userRole', userRole.value);
     updateAuthHeader();
     await refreshTasks();
     await refreshMail();
@@ -595,8 +601,10 @@ const register = async () => {
     });
     authToken.value = response.data.token;
     username.value = response.data.username;
+    userRole.value = response.data.role;
     localStorage.setItem('authToken', authToken.value);
     localStorage.setItem('username', username.value);
+    localStorage.setItem('userRole', userRole.value);
     updateAuthHeader();
     await refreshTasks();
     await refreshMail();
@@ -615,8 +623,10 @@ const logout = async () => {
   } finally {
     authToken.value = '';
     username.value = '';
+    userRole.value = '';
     localStorage.removeItem('authToken');
     localStorage.removeItem('username');
+    localStorage.removeItem('userRole');
     updateAuthHeader();
     tasks.value = [];
     mailMessages.value = [];

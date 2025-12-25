@@ -10,7 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.List;
 
-public class AuthInterceptor implements HandlerInterceptor {
+public class AdminInterceptor implements HandlerInterceptor {
     private final AuthTokenStore tokenStore;
     private final AntPathMatcher matcher = new AntPathMatcher();
     private final List<String> publicPatterns = List.of(
@@ -25,7 +25,7 @@ public class AuthInterceptor implements HandlerInterceptor {
         "/api/gallery/public/**"
     );
 
-    public AuthInterceptor(AuthTokenStore tokenStore) {
+    public AdminInterceptor(AuthTokenStore tokenStore) {
         this.tokenStore = tokenStore;
     }
 
@@ -36,10 +36,11 @@ public class AuthInterceptor implements HandlerInterceptor {
             return true;
         }
         String token = request.getHeader("X-Auth-Token");
-        AuthTokenStore.AuthSession session = tokenStore.getSession(token)
+        String role = tokenStore.getRole(token)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or invalid token"));
-        request.setAttribute("userRole", session.role());
-        request.setAttribute("userId", session.userId());
+        if (!"ADMIN".equalsIgnoreCase(role)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Admin access required");
+        }
         return true;
     }
 
