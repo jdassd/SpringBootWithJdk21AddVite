@@ -50,6 +50,20 @@ public class MailController {
         return stored;
     }
 
+    @PostMapping("/receive")
+    public MailMessage receive(@Valid @RequestBody MailRequest request) {
+        MailMessage stored = new MailMessage();
+        stored.setId(System.currentTimeMillis());
+        stored.setDirection("INBOUND");
+        stored.setFromAddress(request.fromAddress());
+        stored.setToAddress(request.toAddress());
+        stored.setSubject(request.subject());
+        stored.setBody(request.body());
+        stored.setCreatedAt(Instant.now());
+        mailRepository.save(stored);
+        return stored;
+    }
+
     public record MailRequest(
         @Email @NotBlank String fromAddress,
         @Email @NotBlank String toAddress,
