@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS users (
     username VARCHAR(64) NOT NULL,
     email VARCHAR(150) NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
+    role VARCHAR(32) NOT NULL DEFAULT 'USER',
     failed_attempts INT DEFAULT 0,
     locked_until TIMESTAMP NULL,
     created_at TIMESTAMP NOT NULL

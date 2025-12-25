@@ -14,6 +14,7 @@ public class User {
     private String username;
     private String email;
     private String passwordHash;
+    private String role;
     private Integer failedAttempts;
     private Instant lockedUntil;
     private Instant createdAt;
@@ -48,6 +49,14 @@ public class User {
 
     public void setPasswordHash(String passwordHash) {
         this.passwordHash = passwordHash;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 
     public Integer getFailedAttempts() {

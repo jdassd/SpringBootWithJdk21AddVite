@@ -44,11 +44,12 @@ public class AuthController {
         user.setUsername(request.username());
         user.setEmail(request.email());
         user.setPasswordHash(passwordEncoder.encode(request.password()));
+        user.setRole("USER");
         user.setFailedAttempts(0);
         user.setCreatedAt(Instant.now());
         userRepository.save(user);
-        String token = tokenStore.createToken(user.getId());
-        return new AuthResponse(token, user.getUsername());
+        String token = tokenStore.createToken(user.getId(), user.getRole());
+        return new AuthResponse(token, user.getUsername(), user.getRole());
     }
 
     @PostMapping("/login")
@@ -72,8 +73,8 @@ public class AuthController {
         user.setFailedAttempts(0);
         user.setLockedUntil(null);
         userRepository.save(user);
-        String token = tokenStore.createToken(user.getId());
-        return new AuthResponse(token, user.getUsername());
+        String token = tokenStore.createToken(user.getId(), user.getRole());
+        return new AuthResponse(token, user.getUsername(), user.getRole());
     }
 
     @PostMapping("/logout")
@@ -113,6 +114,6 @@ public class AuthController {
     ) {
     }
 
-    public record AuthResponse(String token, String username) {
+    public record AuthResponse(String token, String username, String role) {
     }
 }

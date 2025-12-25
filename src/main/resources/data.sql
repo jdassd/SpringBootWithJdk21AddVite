@@ -2,6 +2,10 @@ MERGE INTO blog_posts (id, title, slug, content, status, created_at, updated_at)
 KEY (id)
 VALUES (1001, '欢迎来到摄影博客', 'welcome', '这是第一篇文章，用于展示博客与摄影展。', 'PUBLISHED', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
+MERGE INTO users (id, username, email, password_hash, role, failed_attempts, locked_until, created_at)
+KEY (id)
+VALUES (1, 'admin', 'admin@example.com', '$2b$12$84UNQVmtrA1MTmceVLT57uxmQB4w2Ll2q0Zjlk4C7pWqKEHpRegTe', 'ADMIN', 0, NULL, CURRENT_TIMESTAMP);
+
 MERGE INTO blog_tags (id, name) KEY (id) VALUES (2001, 'photography');
 MERGE INTO blog_post_tags (id, post_id, tag_id) KEY (id) VALUES (3001, 1001, 2001);
 
