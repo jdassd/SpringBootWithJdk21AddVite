@@ -60,25 +60,10 @@
               </el-card>
 
               <!-- Blog -->
-              <div v-if="currentView === 'blog'" class="post-grid">
-                <el-card v-for="post in blogPosts" :key="post.id" class="post-card" shadow="hover">
-                  <h3>{{ post.title }}</h3>
-                  <p>{{ post.content }}</p>
-                </el-card>
-                <el-empty v-if="!blogPosts.length" description="暂无文章" />
-              </div>
+              <BlogView v-if="currentView === 'blog'" :posts="blogPosts" />
 
               <!-- Gallery -->
-              <div v-if="currentView === 'gallery'" class="gallery-grid">
-                <el-card v-for="album in albums" :key="album.id" class="album-card" :body-style="{ padding: '0px' }">
-                  <img :src="album.coverUrl" class="album-image" />
-                  <div class="album-info">
-                    <h4>{{ album.title }}</h4>
-                    <p>{{ album.description }}</p>
-                  </div>
-                </el-card>
-                <el-empty v-if="!albums.length" description="暂无摄影集" />
-              </div>
+              <GalleryView v-if="currentView === 'gallery'" :albums="albums" />
 
               <!-- Tasks & Mail & Admin (Keep original logic but wrapped in modern cards) -->
               <el-card v-if="currentView === 'tasks'" class="modern-card">
@@ -160,6 +145,8 @@ import { ElMessage } from 'element-plus';
 import Sidebar from './components/layout/Sidebar.vue';
 import Header from './components/layout/Header.vue';
 import HomeView from './components/views/HomeView.vue';
+import BlogView from './components/views/BlogView.vue';
+import GalleryView from './components/views/GalleryView.vue';
 import AdminPanel from './components/admin/AdminPanel.vue';
 
 // --- State ---

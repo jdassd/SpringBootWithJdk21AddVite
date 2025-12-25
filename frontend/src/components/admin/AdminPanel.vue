@@ -65,7 +65,9 @@ import {
   List,
   Message,
   Picture,
+  Picture,
   Search,
+  UserFilled,
 } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import AdminNavigation from './AdminNavigation.vue';
@@ -76,6 +78,7 @@ import AdminGallery from './AdminGallery.vue';
 import AdminSearchEngines from './AdminSearchEngines.vue';
 import AdminTasks from './AdminTasks.vue';
 import AdminMail from './AdminMail.vue';
+import AdminUsers from './AdminUsers.vue';
 
 const props = defineProps({
   isAdmin: {
@@ -90,6 +93,15 @@ const isMobile = ref(false);
 const seeding = ref(false);
 
 const modules = [
+  {
+    key: 'users',
+    label: '用户管理',
+    description: '管理系统账户、权限与安全。',
+    purpose: '监控用户活跃度并进行权限分配。',
+    scope: '影响全站访问权限与管理员身份认定。',
+    icon: UserFilled,
+    component: AdminUsers,
+  },
   {
     key: 'blog',
     label: '博客管理',

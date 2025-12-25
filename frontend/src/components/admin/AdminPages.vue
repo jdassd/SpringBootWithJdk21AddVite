@@ -40,23 +40,26 @@
     </div>
 
     <el-drawer v-model="drawerVisible" size="90%" direction="btt" :with-header="false">
-      <AdminPageForm
-        ref="drawerFormRef"
-        :form="formModel"
-        :rules="rules"
-        :is-editing="Boolean(editingId)"
-        @submit="submit"
-        @reset="resetForm"
-      />
+      <div style="padding: 20px">
+        <AdminPageForm
+          ref="drawerFormRef"
+          :form="formModel"
+          :rules="rules"
+          :is-editing="Boolean(editingId)"
+          @submit="submit"
+          @reset="resetForm"
+        />
+      </div>
     </el-drawer>
   </section>
 </template>
 
 <script setup>
-import { nextTick, onMounted, ref } from 'vue';
+import { nextTick, onMounted, ref, computed } from 'vue';
 import axios from 'axios';
 import { ElMessageBox } from 'element-plus';
 import { notifyError, notifySuccess } from '../../utils/notify';
+import MarkdownIt from 'markdown-it';
 
 const props = defineProps({
   isMobile: {
@@ -72,6 +75,8 @@ const drawerVisible = ref(false);
 const formRef = ref(null);
 const drawerFormRef = ref(null);
 
+const md = new MarkdownIt();
+
 const formModel = ref({
   title: '',
   slug: '',
@@ -86,17 +91,11 @@ const rules = {
   ],
   slug: [
     { required: true, message: '请输入页面 slug', trigger: 'blur' },
-    {
-      pattern: /^[a-z0-9-]+$/,
-      message: 'slug 仅支持小写字母、数字与 -',
-      trigger: 'blur',
-    },
+    { pattern: /^[a-z0-9-]+$/, message: 'slug 仅支持小写字母、数字与 -', trigger: 'blur' },
   ],
   content: [
     { required: true, message: '请输入页面内容', trigger: 'blur' },
-    { min: 10, message: '页面内容不少于 10 个字符', trigger: 'blur' },
   ],
-  customCss: [{ max: 500, message: '自定义样式不超过 500 字符', trigger: 'blur' }],
 };
 
 const fetchPages = async () => {
@@ -115,9 +114,6 @@ const openCreate = () => {
   resetForm();
   if (props.isMobile) {
     drawerVisible.value = true;
-    nextTick(() => drawerFormRef.value?.clearValidate());
-  } else {
-    formRef.value?.clearValidate();
   }
 };
 
@@ -132,10 +128,6 @@ const openEdit = (row) => {
   if (props.isMobile) {
     drawerVisible.value = true;
   }
-  nextTick(() => {
-    formRef.value?.clearValidate();
-    drawerFormRef.value?.clearValidate();
-  });
 };
 
 const resetForm = () => {
@@ -166,16 +158,12 @@ const submit = async (formEl) => {
 
 const remove = async (row) => {
   try {
-    await ElMessageBox.confirm('确定要删除该页面吗？', '删除确认', {
-      type: 'warning',
-    });
+    await ElMessageBox.confirm('确定要删除该页面吗？', '删除确认', { type: 'warning' });
     await axios.delete(`/api/pages/${row.id}`);
     notifySuccess('页面已删除');
     await fetchPages();
   } catch (error) {
-    if (error !== 'cancel') {
-      notifyError('删除页面失败');
-    }
+    if (error !== 'cancel') notifyError('删除页面失败');
   }
 };
 
@@ -185,100 +173,59 @@ const formatDateTime = (value) => {
 };
 
 const AdminPageForm = {
-  props: {
-    form: { type: Object, required: true },
-    rules: { type: Object, required: true },
-    isEditing: { type: Boolean, default: false },
-  },
+  props: ['form', 'rules', 'isEditing'],
   emits: ['submit', 'reset'],
   setup(props, { emit }) {
-    const submitForm = (formRef) => emit('submit', formRef);
-    const reset = () => emit('reset');
-    return { submitForm, reset };
+    const activeTab = ref('edit');
+    const previewContent = computed(() => md.render(props.form.content || ''));
+    return { activeTab, previewContent, submitForm: (f) => emit('submit', f), reset: () => emit('reset') };
   },
   template: `
     <div class="admin-form">
       <h4>{{ isEditing ? '编辑页面' : '新增页面' }}</h4>
       <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
         <el-form-item label="标题" prop="title">
-          <el-input v-model="form.title" placeholder="输入页面标题" />
+          <el-input v-model="form.title" />
         </el-form-item>
         <el-form-item label="Slug" prop="slug">
-          <el-input v-model="form.slug" placeholder="如：brand-story" />
+          <el-input v-model="form.slug" />
         </el-form-item>
-        <el-form-item label="页面内容" prop="content">
-          <el-input v-model="form.content" type="textarea" rows="6" placeholder="输入页面内容" />
+        
+        <el-tabs v-model="activeTab" style="margin-bottom: 20px">
+          <el-tab-pane label="编辑内容 (Markdown)" name="edit">
+            <el-input v-model="form.content" type="textarea" rows="10" />
+          </el-tab-pane>
+          <el-tab-pane label="预览" name="preview">
+            <div class="markdown-preview" v-html="previewContent"></div>
+          </el-tab-pane>
+        </el-tabs>
+
+        <el-form-item label="自定义样式 (CSS)" prop="customCss">
+          <el-input v-model="form.customCss" type="textarea" rows="3" />
         </el-form-item>
-        <el-form-item label="自定义样式" prop="customCss">
-          <el-input v-model="form.customCss" type="textarea" rows="4" placeholder="可选，输入 CSS" />
-        </el-form-item>
+
         <div class="form-actions">
-          <el-button type="primary" @click="submitForm($refs.formRef)">
-            {{ isEditing ? '保存修改' : '新增页面' }}
-          </el-button>
+          <el-button type="primary" @click="submitForm($refs.formRef)">保存</el-button>
           <el-button @click="reset">重置</el-button>
         </div>
       </el-form>
     </div>
-  `,
+  `
 };
 
 onMounted(fetchPages);
 </script>
 
 <style scoped>
-.admin-module {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+.admin-module { display: flex; flex-direction: column; gap: 16px; }
+.admin-module-grid { display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 16px; }
+.markdown-preview {
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  background: #fafafa;
+  min-height: 200px;
+  max-height: 400px;
+  overflow-y: auto;
 }
-
-.admin-module-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-}
-
-.admin-module-header h3 {
-  margin: 0 0 4px;
-  color: #1f2a44;
-}
-
-.admin-module-header p {
-  margin: 0;
-  color: #6b7385;
-}
-
-.admin-module-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 360px;
-  gap: 16px;
-}
-
-.admin-module-form {
-  align-self: start;
-}
-
-.admin-form {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.admin-form h4 {
-  margin: 0;
-  font-size: 16px;
-}
-
-.form-actions {
-  display: flex;
-  gap: 8px;
-}
-
-@media (max-width: 900px) {
-  .admin-module-grid {
-    grid-template-columns: 1fr;
-  }
-}
+@media (max-width: 900px) { .admin-module-grid { grid-template-columns: 1fr; } }
 </style>

@@ -41,15 +41,17 @@
     </div>
 
     <el-drawer v-model="drawerVisible" size="90%" direction="btt" :with-header="false">
-      <AdminBlogForm
-        ref="drawerFormRef"
-        :form="formModel"
-        :rules="rules"
-        :tag-options="tagOptions"
-        :is-editing="Boolean(editingId)"
-        @submit="submit"
-        @reset="resetForm"
-      />
+      <div class="drawer-inner" style="padding: 20px">
+        <AdminBlogForm
+          ref="drawerFormRef"
+          :form="formModel"
+          :rules="rules"
+          :tag-options="tagOptions"
+          :is-editing="Boolean(editingId)"
+          @submit="submit"
+          @reset="resetForm"
+        />
+      </div>
     </el-drawer>
   </section>
 </template>
@@ -59,6 +61,7 @@ import { nextTick, onMounted, ref } from 'vue';
 import axios from 'axios';
 import { ElMessageBox } from 'element-plus';
 import { notifyError, notifySuccess } from '../../utils/notify';
+import MarkdownIt from 'markdown-it';
 
 const props = defineProps({
   isMobile: {
@@ -74,6 +77,8 @@ const editingId = ref(null);
 const drawerVisible = ref(false);
 const formRef = ref(null);
 const drawerFormRef = ref(null);
+
+const md = new MarkdownIt();
 
 const formModel = ref({
   title: '',
@@ -92,18 +97,6 @@ const rules = {
     { min: 10, message: '正文内容不少于 10 个字符', trigger: 'blur' },
   ],
   status: [{ required: true, message: '请选择状态', trigger: 'change' }],
-  tags: [
-    {
-      validator: (rule, value, callback) => {
-        if (!value || value.length === 0) {
-          callback(new Error('请至少填写一个标签'));
-        } else {
-          callback();
-        }
-      },
-      trigger: 'change',
-    },
-  ],
 };
 
 const fetchPosts = async () => {
@@ -143,7 +136,7 @@ const openEdit = (row) => {
     title: row.title || '',
     content: row.content || '',
     status: row.status || 'DRAFT',
-    tags: [],
+    tags: [], // Tags fetch might be needed if not present in post object
   };
   if (props.isMobile) {
     drawerVisible.value = true;
@@ -210,9 +203,11 @@ const AdminBlogForm = {
   },
   emits: ['submit', 'reset'],
   setup(props, { emit }) {
+    const activeTab = ref('edit');
     const submitForm = (formRef) => emit('submit', formRef);
     const reset = () => emit('reset');
-    return { submitForm, reset };
+    const previewContent = computed(() => md.render(props.form.content || ''));
+    return { submitForm, reset, activeTab, previewContent };
   },
   template: `
     <div class="admin-form">
@@ -221,28 +216,26 @@ const AdminBlogForm = {
         <el-form-item label="标题" prop="title">
           <el-input v-model="form.title" placeholder="输入文章标题" />
         </el-form-item>
+        
+        <el-tabs v-model="activeTab" class="editor-tabs">
+          <el-tab-pane label="正文编辑 (Markdown)" name="edit">
+            <el-form-item prop="content">
+              <el-input v-model="form.content" type="textarea" :rows="12" placeholder="支持 Markdown 语法" />
+            </el-form-item>
+          </el-tab-pane>
+          <el-tab-pane label="预览" name="preview">
+            <div class="markdown-preview" v-html="previewContent"></div>
+          </el-tab-pane>
+        </el-tabs>
+
         <el-form-item label="状态" prop="status">
-          <el-select v-model="form.status" placeholder="请选择状态">
+          <el-select v-model="form.status" style="width: 100%">
             <el-option label="草稿" value="DRAFT" />
             <el-option label="已发布" value="PUBLISHED" />
           </el-select>
         </el-form-item>
-        <el-form-item label="标签" prop="tags">
-          <el-select
-            v-model="form.tags"
-            multiple
-            filterable
-            allow-create
-            default-first-option
-            placeholder="输入或选择标签"
-          >
-            <el-option v-for="tag in tagOptions" :key="tag" :label="tag" :value="tag" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="正文" prop="content">
-          <el-input v-model="form.content" type="textarea" rows="8" placeholder="输入正文内容" />
-        </el-form-item>
-        <div class="form-actions">
+        
+        <div class="form-actions" style="margin-top: 20px">
           <el-button type="primary" @click="submitForm($refs.formRef)">
             {{ isEditing ? '保存修改' : '新增文章' }}
           </el-button>
@@ -275,38 +268,26 @@ onMounted(async () => {
 
 .admin-module-header h3 {
   margin: 0 0 4px;
-  color: #1f2a44;
-}
-
-.admin-module-header p {
-  margin: 0;
-  color: #6b7385;
 }
 
 .admin-module-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 360px;
+  grid-template-columns: minmax(0, 1fr) 420px;
   gap: 16px;
 }
 
-.admin-module-form {
-  align-self: start;
+.markdown-preview {
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: #fdfdfd;
+  min-height: 275px;
+  max-height: 400px;
+  overflow-y: auto;
 }
 
-.admin-form {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.admin-form h4 {
-  margin: 0;
-  font-size: 16px;
-}
-
-.form-actions {
-  display: flex;
-  gap: 8px;
+:deep(.markdown-preview) img {
+  max-width: 100%;
 }
 
 @media (max-width: 900px) {
