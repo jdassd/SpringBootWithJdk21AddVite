@@ -332,32 +332,7 @@
         </div>
       </el-card>
 
-      <el-card v-if="currentView === 'admin'" class="panel admin-panel">
-        <div class="admin-banner">
-          <div>
-            <h3>管理模式</h3>
-            <p>当前处于管理后台，仅限已登录用户进行内容维护。</p>
-          </div>
-          <el-tag type="warning" effect="dark">管理模式</el-tag>
-        </div>
-        <div class="admin-hint">
-          所有管理接口都需要携带 <strong>X-Auth-Token</strong>，请确保登录状态有效。
-        </div>
-        <div class="admin-grid">
-          <div v-for="item in adminModules" :key="item.title" class="admin-card">
-            <div class="admin-card-header">
-              <h4>{{ item.title }}</h4>
-              <span>{{ item.description }}</span>
-            </div>
-            <div v-if="isAdmin" class="admin-actions">
-              <el-button size="small" type="primary" plain>新增</el-button>
-              <el-button size="small" plain>编辑</el-button>
-              <el-button size="small" type="danger" plain>删除</el-button>
-            </div>
-            <el-tag v-else type="info" effect="light">仅管理员可操作</el-tag>
-          </div>
-        </div>
-      </el-card>
+      <AdminPanel v-if="currentView === 'admin'" :is-admin="isAdmin" />
     </section>
   </div>
 </template>
@@ -366,6 +341,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import axios from 'axios';
 import { ElMessage } from 'element-plus';
+import AdminPanel from './components/admin/AdminPanel.vue';
 
 const loading = ref(false);
 const currentView = ref('home');
@@ -417,16 +393,6 @@ const mailForm = ref({
   subject: '',
   body: '',
 });
-
-const adminModules = [
-  { title: '博客管理', description: '管理博客文章、分类与发布状态。' },
-  { title: '导航管理', description: '维护导航链接与分组信息。' },
-  { title: '页面管理', description: '编辑自定义页面与样式。' },
-  { title: '摄影管理', description: '上传与维护摄影专辑内容。' },
-  { title: '搜索引擎管理', description: '配置搜索引擎列表与默认项。' },
-  { title: '任务管理', description: '调整任务模板与提醒策略。' },
-  { title: '邮件管理', description: '管理邮件模板与收发记录。' },
-];
 
 let customPageStyleEl;
 
@@ -1120,73 +1086,6 @@ watch(activePage, (page) => {
 
 .mail-actions {
   display: flex;
-  gap: 8px;
-}
-
-.admin-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.admin-banner {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  padding: 16px;
-  border-radius: 14px;
-  background: #fff3e6;
-  border: 1px solid rgba(255, 166, 0, 0.3);
-}
-
-.admin-banner h3 {
-  margin: 0 0 4px;
-  color: #9a4c07;
-}
-
-.admin-banner p {
-  margin: 0;
-  color: #8b5b2b;
-}
-
-.admin-hint {
-  background: #f6f8ff;
-  border-radius: 12px;
-  padding: 12px 16px;
-  color: #43547c;
-}
-
-.admin-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 16px;
-}
-
-.admin-card {
-  background: #ffffff;
-  border-radius: 14px;
-  padding: 16px;
-  box-shadow: 0 12px 30px rgba(30, 41, 59, 0.08);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.admin-card-header h4 {
-  margin: 0 0 4px;
-  font-size: 16px;
-  color: #1f2a44;
-}
-
-.admin-card-header span {
-  color: #6a7387;
-  font-size: 13px;
-}
-
-.admin-actions {
-  display: flex;
-  flex-wrap: wrap;
   gap: 8px;
 }
 
