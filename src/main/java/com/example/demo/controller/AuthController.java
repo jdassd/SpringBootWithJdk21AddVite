@@ -4,6 +4,7 @@ import com.example.demo.auth.AuthTokenStore;
 import com.example.demo.auth.CaptchaService;
 import com.example.demo.entity.User;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.service.SiteService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -26,12 +27,15 @@ public class AuthController {
     private final CaptchaService captchaService;
     private final UserRepository userRepository;
     private final AuthTokenStore tokenStore;
+    private final SiteService siteService;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-    public AuthController(CaptchaService captchaService, UserRepository userRepository, AuthTokenStore tokenStore) {
+    public AuthController(CaptchaService captchaService, UserRepository userRepository, AuthTokenStore tokenStore,
+            SiteService siteService) {
         this.captchaService = captchaService;
         this.userRepository = userRepository;
         this.tokenStore = tokenStore;
+        this.siteService = siteService;
     }
 
     @GetMapping("/captcha")
@@ -53,6 +57,7 @@ public class AuthController {
         user.setFailedAttempts(0);
         user.setCreatedAt(Instant.now());
         userRepository.save(user);
+        siteService.ensureSiteForUser(user);
 
         log.info("Registration successful for user: {}", user.getUsername());
         String token = tokenStore.createToken(user.getId(), user.getRole());

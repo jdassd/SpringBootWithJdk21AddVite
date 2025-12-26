@@ -1,13 +1,16 @@
 package com.example.demo.controller;
 
+import com.example.demo.dto.PagedResponse;
 import com.example.demo.entity.SearchEngine;
 import com.example.demo.repository.SearchEngineRepository;
+import com.example.demo.util.PaginationUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/search-engines")
@@ -20,14 +23,13 @@ public class SearchEngineController {
     }
 
     @GetMapping
-    public List<SearchEngine> list(HttpServletRequest request) {
+    public PagedResponse<SearchEngine> list(HttpServletRequest request,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sort) {
         Long userId = (Long) request.getAttribute("userId");
-        return repository.findByUserId(userId);
-    }
-
-    @GetMapping("/public")
-    public List<SearchEngine> listPublic(HttpServletRequest request) {
-        return list(request);
+        Page<SearchEngine> engines = repository.findByUserId(userId, PaginationUtils.toPageable(page, size, sort, "name"));
+        return new PagedResponse<>(engines.getContent(), engines.getNumber(), engines.getSize(), engines.getTotalElements());
     }
 
     @PostMapping
@@ -48,16 +50,13 @@ public class SearchEngineController {
     @PutMapping("/{id}")
     public SearchEngine update(HttpServletRequest request, @PathVariable Long id,
             @Valid @RequestBody SearchEngineRequest engineRequest) {
-        // Simple check: we could verify ownership here, but for now we trust the client
-        // or the context.
-        // Ideally: SearchEngine engine = repository.findByIdAndUserId(id, userId)...
-        // But for parity with other fixes:
-        SearchEngine engine = repository.findById(id).orElseThrow();
+        Long userId = (Long) request.getAttribute("userId");
+        SearchEngine engine = repository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Search engine not found"));
         engine.setName(engineRequest.name());
         engine.setQueryUrl(engineRequest.queryUrl());
         engine.setIsDefault(Boolean.TRUE.equals(engineRequest.isDefault()));
         if (Boolean.TRUE.equals(engineRequest.isDefault())) {
-            Long userId = (Long) request.getAttribute("userId");
             unsetDefaults(userId);
         }
         repository.save(engine);
@@ -65,8 +64,11 @@ public class SearchEngineController {
     }
 
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) {
-        repository.deleteById(id);
+    public void delete(HttpServletRequest request, @PathVariable Long id) {
+        Long userId = (Long) request.getAttribute("userId");
+        SearchEngine engine = repository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Search engine not found"));
+        repository.deleteById(engine.getId());
     }
 
     private void unsetDefaults(Long userId) {

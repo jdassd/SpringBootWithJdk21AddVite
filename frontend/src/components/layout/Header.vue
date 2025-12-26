@@ -1,6 +1,9 @@
 <template>
   <header class="header">
     <div class="search-section">
+      <div v-if="siteName" class="site-meta">
+        <div class="site-title">{{ siteName }}</div>
+      </div>
       <el-input
         v-if="showSearch"
         v-model="searchQuery"
@@ -53,6 +56,7 @@ const props = defineProps({
   authToken: String,
   username: String,
   avatarUrl: String,
+  siteName: String,
   searchEngines: Array,
   defaultEngine: Object,
   showSearch: Boolean
@@ -89,6 +93,20 @@ const handleSearch = () => {
 .search-section {
   flex: 1;
   max-width: 600px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.site-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.site-title {
+  font-weight: 700;
+  color: var(--text-main);
+  font-size: 1rem;
 }
 
 .global-search :deep(.el-input__wrapper) {

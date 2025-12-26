@@ -37,6 +37,6 @@ public class AuthConfig implements WebMvcConfigurer {
         registry.addInterceptor(authInterceptor(authTokenStore()))
             .addPathPatterns("/api/**");
         registry.addInterceptor(adminInterceptor(authTokenStore()))
-            .addPathPatterns("/api/**");
+            .addPathPatterns("/api/admin/**");
     }
 }

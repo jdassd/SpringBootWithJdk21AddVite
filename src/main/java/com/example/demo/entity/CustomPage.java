@@ -19,6 +19,8 @@ public class CustomPage {
     private String slug;
     private String content;
     private String customCss;
+    private String visibility;
+    private Instant publishedAt;
     private Instant createdAt;
     private Instant updatedAt;
 
@@ -68,6 +70,22 @@ public class CustomPage {
 
     public void setCustomCss(String customCss) {
         this.customCss = customCss;
+    }
+
+    public String getVisibility() {
+        return visibility;
+    }
+
+    public void setVisibility(String visibility) {
+        this.visibility = visibility;
+    }
+
+    public Instant getPublishedAt() {
+        return publishedAt;
+    }
+
+    public void setPublishedAt(Instant publishedAt) {
+        this.publishedAt = publishedAt;
     }
 
     public Instant getCreatedAt() {

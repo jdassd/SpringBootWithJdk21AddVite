@@ -1,45 +1,50 @@
 package com.example.demo.controller;
 
+import com.example.demo.dto.PagedResponse;
 import com.example.demo.entity.MailMessage;
 import com.example.demo.repository.MailMessageRepository;
+import com.example.demo.service.MailOutboxService;
+import com.example.demo.util.PaginationUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/mail")
 @CrossOrigin(origins = "*")
 public class MailController {
     private final MailMessageRepository mailRepository;
-    private final JavaMailSender mailSender;
+    private final MailOutboxService outboxService;
 
-    public MailController(MailMessageRepository mailRepository, JavaMailSender mailSender) {
+    public MailController(MailMessageRepository mailRepository, MailOutboxService outboxService) {
         this.mailRepository = mailRepository;
-        this.mailSender = mailSender;
+        this.outboxService = outboxService;
     }
 
     @GetMapping
-    public List<MailMessage> listMessages(HttpServletRequest request) {
+    public PagedResponse<MailMessage> listMessages(HttpServletRequest request,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sort) {
         Long userId = (Long) request.getAttribute("userId");
-        return mailRepository.findByUserId(userId);
+        Page<MailMessage> messages = mailRepository.findByUserId(userId,
+                PaginationUtils.toPageable(page, size, sort, "createdAt"));
+        return new PagedResponse<>(messages.getContent(), messages.getNumber(), messages.getSize(),
+                messages.getTotalElements());
     }
 
     @PostMapping("/send")
     public MailMessage send(HttpServletRequest request, @Valid @RequestBody MailRequest mailRequest) {
         Long userId = (Long) request.getAttribute("userId");
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(mailRequest.fromAddress());
-        message.setTo(mailRequest.toAddress());
-        message.setSubject(mailRequest.subject());
-        message.setText(mailRequest.body());
-        mailSender.send(message);
+        outboxService.enqueue(userId, mailRequest.fromAddress(), mailRequest.toAddress(),
+                mailRequest.subject(), mailRequest.body());
 
         MailMessage stored = new MailMessage();
         stored.setUserId(userId);
@@ -69,8 +74,11 @@ public class MailController {
     }
 
     @PutMapping("/{id}")
-    public MailMessage update(@PathVariable Long id, @Valid @RequestBody MailRequest request) {
-        MailMessage stored = mailRepository.findById(id).orElseThrow();
+    public MailMessage update(HttpServletRequest requestContext, @PathVariable Long id,
+            @Valid @RequestBody MailRequest request) {
+        Long userId = (Long) requestContext.getAttribute("userId");
+        MailMessage stored = mailRepository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mail not found"));
         stored.setFromAddress(request.fromAddress());
         stored.setToAddress(request.toAddress());
         stored.setSubject(request.subject());
@@ -80,8 +88,11 @@ public class MailController {
     }
 
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) {
-        mailRepository.deleteById(id);
+    public void delete(HttpServletRequest request, @PathVariable Long id) {
+        Long userId = (Long) request.getAttribute("userId");
+        MailMessage stored = mailRepository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mail not found"));
+        mailRepository.deleteById(stored.getId());
     }
 
     public record MailRequest(

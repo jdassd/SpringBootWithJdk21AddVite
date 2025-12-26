@@ -1,16 +1,20 @@
 package com.example.demo.controller;
 
+import com.example.demo.dto.PagedResponse;
 import com.example.demo.entity.TaskItem;
 import com.example.demo.repository.TaskRepository;
+import com.example.demo.util.PaginationUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.temporal.TemporalAdjusters;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/tasks")
@@ -23,9 +27,13 @@ public class TaskController {
     }
 
     @GetMapping
-    public List<TaskItem> listTasks(HttpServletRequest request) {
+    public PagedResponse<TaskItem> listTasks(HttpServletRequest request,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sort) {
         Long userId = (Long) request.getAttribute("userId");
-        return taskRepository.findByUserId(userId);
+        Page<TaskItem> tasks = taskRepository.findByUserId(userId, PaginationUtils.toPageable(page, size, sort, "createdAt"));
+        return new PagedResponse<>(tasks.getContent(), tasks.getNumber(), tasks.getSize(), tasks.getTotalElements());
     }
 
     @PostMapping
@@ -43,8 +51,11 @@ public class TaskController {
     }
 
     @PutMapping("/{id}")
-    public TaskItem update(@PathVariable Long id, @Valid @RequestBody TaskRequest request) {
-        TaskItem task = taskRepository.findById(id).orElseThrow();
+    public TaskItem update(HttpServletRequest requestContext, @PathVariable Long id,
+            @Valid @RequestBody TaskRequest request) {
+        Long userId = (Long) requestContext.getAttribute("userId");
+        TaskItem task = taskRepository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found"));
         task.setTitle(request.title());
         task.setDueDate(request.dueDate());
         task.setReminderTime(request.reminderTime());
@@ -53,8 +64,10 @@ public class TaskController {
     }
 
     @PostMapping("/{id}/complete")
-    public TaskItem complete(@PathVariable Long id) {
-        TaskItem task = taskRepository.findById(id).orElseThrow();
+    public TaskItem complete(HttpServletRequest request, @PathVariable Long id) {
+        Long userId = (Long) request.getAttribute("userId");
+        TaskItem task = taskRepository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found"));
         task.setStatus("COMPLETED");
         task.setCompletedAt(Instant.now());
         taskRepository.save(task);
@@ -62,8 +75,11 @@ public class TaskController {
     }
 
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) {
-        taskRepository.deleteById(id);
+    public void delete(HttpServletRequest request, @PathVariable Long id) {
+        Long userId = (Long) request.getAttribute("userId");
+        TaskItem task = taskRepository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found"));
+        taskRepository.deleteById(task.getId());
     }
 
     @GetMapping("/summary")

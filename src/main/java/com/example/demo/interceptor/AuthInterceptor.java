@@ -15,6 +15,8 @@ public class AuthInterceptor implements HandlerInterceptor {
     private final AntPathMatcher matcher = new AntPathMatcher();
     private final List<String> publicPatterns = List.of(
         "/api/auth/**",
+        "/api/public/**",
+        "/api/media/files/**",
         "/api/rss",
         "/api/blog/posts/public",
         "/api/blog/posts/*",

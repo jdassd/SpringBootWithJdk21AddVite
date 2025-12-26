@@ -1,26 +1,39 @@
 package com.example.demo.controller;
 
 import com.example.demo.entity.BlogPost;
+import com.example.demo.entity.Site;
 import com.example.demo.repository.BlogPostRepository;
+import com.example.demo.service.SiteService;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.format.DateTimeFormatter;
+import java.time.Instant;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.List;
 
 @RestController
 public class RssController {
     private final BlogPostRepository postRepository;
+    private final SiteService siteService;
 
-    public RssController(BlogPostRepository postRepository) {
+    public RssController(BlogPostRepository postRepository, SiteService siteService) {
         this.postRepository = postRepository;
+        this.siteService = siteService;
     }
 
-    @GetMapping(value = "/api/rss", produces = MediaType.APPLICATION_XML_VALUE)
-    public String rss() {
-        List<BlogPost> posts = postRepository.findByStatus("PUBLISHED");
+    @GetMapping(value = "/api/public/{siteKey}/rss", produces = MediaType.APPLICATION_XML_VALUE)
+    public String rss(@PathVariable String siteKey) {
+        Site site = siteService.resolveSite(siteKey);
+        Instant now = Instant.now();
+        List<BlogPost> posts = postRepository.findByUserIdAndVisibility(site.getOwnerUserId(), "PUBLIC")
+                .stream()
+                .filter(post -> post.getPublishedAt() == null || !post.getPublishedAt().isAfter(now))
+                .sorted(Comparator.comparing(BlogPost::getPublishedAt, Comparator.nullsLast(Comparator.reverseOrder())))
+                .toList();
         String items = posts.stream()
             .map(post -> """
                 <item>
@@ -34,7 +47,7 @@ public class RssController {
                 escape(post.getSlug()),
                 escape(post.getSlug()),
                 post.getCreatedAt() == null ? "" : DateTimeFormatter.RFC_1123_DATE_TIME.format(
-                    post.getCreatedAt().atZone(ZoneId.of("UTC"))
+                    (post.getPublishedAt() == null ? post.getCreatedAt() : post.getPublishedAt()).atZone(ZoneId.of("UTC"))
                 )
             ))
             .reduce("", String::concat);

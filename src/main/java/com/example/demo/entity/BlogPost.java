@@ -1,5 +1,6 @@
 package com.example.demo.entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -18,7 +19,9 @@ public class BlogPost {
     private String title;
     private String slug;
     private String content;
-    private String status;
+    @Column(name = "status")
+    private String visibility;
+    private Instant publishedAt;
     private Instant createdAt;
     private Instant updatedAt;
 
@@ -62,12 +65,20 @@ public class BlogPost {
         this.content = content;
     }
 
-    public String getStatus() {
-        return status;
+    public String getVisibility() {
+        return visibility;
     }
 
-    public void setStatus(String status) {
-        this.status = status;
+    public void setVisibility(String visibility) {
+        this.visibility = visibility;
+    }
+
+    public Instant getPublishedAt() {
+        return publishedAt;
+    }
+
+    public void setPublishedAt(Instant publishedAt) {
+        this.publishedAt = publishedAt;
     }
 
     public Instant getCreatedAt() {

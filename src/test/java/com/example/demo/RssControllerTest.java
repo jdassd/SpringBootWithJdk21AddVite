@@ -20,7 +20,7 @@ class RssControllerTest {
 
     @Test
     void returnsRssFeed() throws Exception {
-        mockMvc.perform(get("/api/rss"))
+        mockMvc.perform(get("/api/public/admin/rss"))
             .andExpect(status().isOk())
             .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_XML));
     }

@@ -1,14 +1,16 @@
 package com.example.demo.controller;
 
+import com.example.demo.dto.PagedResponse;
 import com.example.demo.entity.NavigationLink;
 import com.example.demo.repository.NavigationLinkRepository;
+import com.example.demo.util.PaginationUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Comparator;
-import java.util.List;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/navigation")
@@ -21,17 +23,13 @@ public class NavigationController {
     }
 
     @GetMapping
-    public List<NavigationLink> listLinks(HttpServletRequest request) {
+    public PagedResponse<NavigationLink> listLinks(HttpServletRequest request,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sort) {
         Long userId = (Long) request.getAttribute("userId");
-        return linkRepository.findByUserId(userId).stream()
-                .sorted(Comparator.comparing(NavigationLink::getGroupName, Comparator.nullsLast(String::compareTo))
-                        .thenComparing(link -> link.getSortOrder() == null ? 0 : link.getSortOrder()))
-                .toList();
-    }
-
-    @GetMapping("/public")
-    public List<NavigationLink> listPublicLinks(HttpServletRequest request) {
-        return listLinks(request);
+        Page<NavigationLink> links = linkRepository.findByUserId(userId, PaginationUtils.toPageable(page, size, sort, "sortOrder"));
+        return new PagedResponse<>(links.getContent(), links.getNumber(), links.getSize(), links.getTotalElements());
     }
 
     @PostMapping
@@ -49,20 +47,26 @@ public class NavigationController {
     }
 
     @PutMapping("/{id}")
-    public NavigationLink update(@PathVariable Long id, @Valid @RequestBody NavigationRequest request) {
-        NavigationLink link = linkRepository.findById(id).orElseThrow();
-        link.setName(request.name());
-        link.setUrl(request.url());
-        link.setIcon(request.icon());
-        link.setGroupName(request.groupName());
-        link.setSortOrder(request.sortOrder());
+    public NavigationLink update(HttpServletRequest request, @PathVariable Long id,
+            @Valid @RequestBody NavigationRequest update) {
+        Long userId = (Long) request.getAttribute("userId");
+        NavigationLink link = linkRepository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Navigation link not found"));
+        link.setName(update.name());
+        link.setUrl(update.url());
+        link.setIcon(update.icon());
+        link.setGroupName(update.groupName());
+        link.setSortOrder(update.sortOrder());
         linkRepository.save(link);
         return link;
     }
 
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) {
-        linkRepository.deleteById(id);
+    public void delete(HttpServletRequest request, @PathVariable Long id) {
+        Long userId = (Long) request.getAttribute("userId");
+        NavigationLink link = linkRepository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Navigation link not found"));
+        linkRepository.deleteById(link.getId());
     }
 
     public record NavigationRequest(

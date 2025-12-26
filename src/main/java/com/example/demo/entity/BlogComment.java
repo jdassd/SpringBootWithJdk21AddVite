@@ -17,6 +17,7 @@ public class BlogComment {
     private Long postId;
     private String author;
     private String content;
+    private String status;
     private Instant createdAt;
 
     public Long getId() {
@@ -49,6 +50,14 @@ public class BlogComment {
 
     public void setContent(String content) {
         this.content = content;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     public Instant getCreatedAt() {

@@ -83,7 +83,8 @@ const md = new MarkdownIt();
 const formModel = ref({
   title: '',
   content: '',
-  status: 'DRAFT',
+  visibility: 'DRAFT',
+  publishedAt: '',
   tags: [],
 });
 
@@ -98,12 +99,14 @@ const rules = {
   ],
   status: [{ required: true, message: '请选择状态', trigger: 'change' }],
 };
+rules.visibility = rules.status;
+delete rules.status;
 
 const fetchPosts = async () => {
   loading.value = true;
   try {
     const response = await axios.get('/api/blog/posts');
-    posts.value = response.data;
+    posts.value = response.data.items || [];
   } catch (error) {
     notifyError('加载文章失败');
   } finally {
@@ -135,8 +138,9 @@ const openEdit = (row) => {
   formModel.value = {
     title: row.title || '',
     content: row.content || '',
-    status: row.status || 'DRAFT',
-    tags: [], // Tags fetch might be needed if not present in post object
+    visibility: row.visibility || 'DRAFT',
+    publishedAt: row.publishedAt || '',
+    tags: row.tags || [],
   };
   if (props.isMobile) {
     drawerVisible.value = true;
@@ -149,7 +153,7 @@ const openEdit = (row) => {
 
 const resetForm = () => {
   editingId.value = null;
-  formModel.value = { title: '', content: '', status: 'DRAFT', tags: [] };
+  formModel.value = { title: '', content: '', visibility: 'DRAFT', publishedAt: '', tags: [] };
 };
 
 const submit = async (formEl) => {

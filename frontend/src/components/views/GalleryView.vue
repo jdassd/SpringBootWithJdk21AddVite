@@ -71,6 +71,10 @@ const props = defineProps({
   albums: {
     type: Array,
     default: () => []
+  },
+  siteKey: {
+    type: String,
+    required: true
   }
 });
 
@@ -84,7 +88,7 @@ const handleAlbumClick = async (album) => {
   selectedAlbum.value = album;
   albumLoading.value = true;
   try {
-    const res = await axios.get(`/api/gallery/public/albums/${album.id}/photos`);
+    const res = await axios.get(`/api/public/${props.siteKey}/gallery/albums/${album.id}/photos`);
     photos.value = res.data;
   } catch (e) {
     console.error('Failed to fetch photos', e);

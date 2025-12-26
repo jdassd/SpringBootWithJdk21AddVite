@@ -53,6 +53,15 @@
           </template>
         </el-table-column>
       </el-table>
+      <div class="pagination-bar">
+        <el-pagination
+          :current-page="pagination.page"
+          :page-size="pagination.size"
+          :total="pagination.total"
+          layout="prev, pager, next"
+          @current-change="handlePageChange"
+        />
+      </div>
     </el-card>
   </section>
 </template>
@@ -64,12 +73,16 @@ import { ElMessageBox, ElMessage } from 'element-plus';
 
 const users = ref([]);
 const loading = ref(false);
+const pagination = ref({ page: 1, size: 20, total: 0 });
 
 const fetchUsers = async () => {
   loading.value = true;
   try {
-    const res = await axios.get('/api/users');
-    users.value = res.data;
+    const res = await axios.get('/api/admin/users', {
+      params: { page: pagination.value.page - 1, size: pagination.value.size }
+    });
+    users.value = res.data.items || [];
+    pagination.value.total = res.data.total || 0;
   } catch (e) {
     ElMessage.error('获取用户列表失败');
   } finally {
@@ -83,7 +96,7 @@ const toggleRole = async (user, newRole) => {
       `确定要将用户 "${user.username}" 的角色修改为 ${newRole} 吗？`,
       '角色变更确认'
     );
-    await axios.patch(`/api/users/${user.id}/role`, { role: newRole });
+    await axios.patch(`/api/admin/users/${user.id}/role`, { role: newRole });
     ElMessage.success('权限更新成功');
     fetchUsers();
   } catch (e) {
@@ -98,7 +111,7 @@ const removeUser = async (user) => {
       '用户删除确认',
       { type: 'warning' }
     );
-    await axios.delete(`/api/users/${user.id}`);
+    await axios.delete(`/api/admin/users/${user.id}`);
     ElMessage.success('账户已移除');
     fetchUsers();
   } catch (e) {
@@ -107,6 +120,11 @@ const removeUser = async (user) => {
 };
 
 const formatDateTime = (val) => val ? new Date(val).toLocaleString() : '-';
+
+const handlePageChange = (page) => {
+  pagination.value.page = page;
+  fetchUsers();
+};
 
 onMounted(fetchUsers);
 </script>
@@ -119,5 +137,10 @@ onMounted(fetchUsers);
 }
 .admin-module-header h3 {
   margin: 0 0 4px;
+}
+.pagination-bar {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
 }
 </style>

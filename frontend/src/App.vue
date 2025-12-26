@@ -1,4 +1,5 @@
 <template>
+  <component :is="'style'" v-if="siteCustomCss">{{ siteCustomCss }}</component>
   <el-container class="layout-container">
     <Sidebar 
       :active-view="currentView" 
@@ -10,6 +11,7 @@
       <Header 
         :auth-token="authToken"
         :username="username"
+        :site-name="siteProfile?.displayName"
         :search-engines="searchEngines"
         :default-engine="selectedEngine"
         :show-search="currentView === 'home'"
@@ -26,6 +28,10 @@
             <HomeView 
               v-if="currentView === 'home'"
               :loading="loading"
+              :site="siteProfile"
+              :navigation-links="navigationLinks"
+              :blog-posts="blogPosts"
+              :albums="albums"
               :stats="{
                 links: navigationLinks.length,
                 posts: blogPosts.length,
@@ -61,10 +67,10 @@
               </el-card>
 
               <!-- Blog -->
-              <BlogView v-if="currentView === 'blog'" :posts="blogPosts" />
+              <BlogView v-if="currentView === 'blog'" :posts="blogPosts" :site-key="siteKey" />
 
               <!-- Gallery -->
-              <GalleryView v-if="currentView === 'gallery'" :albums="albums" />
+              <GalleryView v-if="currentView === 'gallery'" :albums="albums" :site-key="siteKey" />
 
               <!-- Tasks & Mail & Admin (Keep original logic but wrapped in modern cards) -->
               <el-card v-if="currentView === 'tasks'" class="modern-card">
@@ -168,6 +174,9 @@ const tasks = ref([]);
 const authToken = ref(localStorage.getItem('authToken') || '');
 const userRole = ref(localStorage.getItem('userRole') || '');
 const username = ref(localStorage.getItem('username') || '');
+const siteKey = ref(localStorage.getItem('siteKey') || '');
+const siteProfile = ref(null);
+const siteCustomCss = ref('');
 
 // Forms
 const loginForm = ref({ username: '', password: '', captchaCode: '' });
@@ -177,6 +186,7 @@ const loginCaptcha = ref(null);
 
 // --- Computed ---
 const isAdmin = computed(() => userRole.value === 'ADMIN');
+const publicApiBase = computed(() => `/api/public/${siteKey.value}`);
 const viewTitle = computed(() => ({
   navigation: '导航中心',
   blog: '博客内容',
@@ -193,6 +203,23 @@ const viewDescription = computed(() => ({
   tasks: '管理您的每日待办',
   profile: '个性化资料与安全设置'
 }[currentView.value] || ''));
+
+const resolveSiteKey = () => {
+  const params = new URLSearchParams(window.location.search);
+  const fromQuery = params.get('site');
+  if (fromQuery) return fromQuery;
+  const path = window.location.pathname.replace(/^\\/+/, '');
+  if (path.startsWith('site/')) {
+    const parts = path.split('/');
+    return parts[1] || 'admin';
+  }
+  return 'admin';
+};
+
+if (!siteKey.value) {
+  siteKey.value = resolveSiteKey();
+  localStorage.setItem('siteKey', siteKey.value);
+}
 
 // --- Methods ---
 const switchView = (view) => {
@@ -214,20 +241,105 @@ const updateAuthHeader = () => {
   else delete axios.defaults.headers.common['X-Auth-Token'];
 };
 
+const themePresets = {
+  classic: {
+    primary: '#4f46e5',
+    primaryHover: '#4338ca',
+    primaryLight: '#eef2ff',
+    bg: '#f8fafc',
+    card: '#ffffff',
+    sidebar: '#1e293b',
+    text: '#1e293b',
+    textSecondary: '#64748b',
+    textMuted: '#94a3b8',
+    border: '#e2e8f0'
+  },
+  sandstone: {
+    primary: '#b45309',
+    primaryHover: '#92400e',
+    primaryLight: '#ffedd5',
+    bg: '#fff7ed',
+    card: '#ffffff',
+    sidebar: '#2d1f14',
+    text: '#3f2d1c',
+    textSecondary: '#7a5c3d',
+    textMuted: '#9a7a58',
+    border: '#f2e8da'
+  },
+  verdant: {
+    primary: '#0f766e',
+    primaryHover: '#115e59',
+    primaryLight: '#ccfbf1',
+    bg: '#f0fdfa',
+    card: '#ffffff',
+    sidebar: '#134e4a',
+    text: '#134e4a',
+    textSecondary: '#4b6b6a',
+    textMuted: '#6d8a89',
+    border: '#cfe9e6'
+  }
+};
+
+const applyTheme = (profile) => {
+  const preset = themePresets[profile?.theme] || themePresets.classic;
+  const primary = profile?.themePrimary || preset.primary;
+  const accent = profile?.themeAccent || preset.primaryHover;
+  const root = document.documentElement;
+  root.style.setProperty('--primary-color', primary);
+  root.style.setProperty('--primary-hover', accent);
+  root.style.setProperty('--primary-light', preset.primaryLight);
+  root.style.setProperty('--bg-color', preset.bg);
+  root.style.setProperty('--card-bg', preset.card);
+  root.style.setProperty('--sidebar-bg', preset.sidebar);
+  root.style.setProperty('--text-main', preset.text);
+  root.style.setProperty('--text-secondary', preset.textSecondary);
+  root.style.setProperty('--text-muted', preset.textMuted);
+  root.style.setProperty('--border-color', preset.border);
+};
+
+const loadSiteProfile = async () => {
+  try {
+    const res = await axios.get(`${publicApiBase.value}/site`);
+    siteProfile.value = res.data;
+    siteCustomCss.value = res.data?.customCss || '';
+    applyTheme(res.data);
+  } catch (e) {
+    siteProfile.value = null;
+    siteCustomCss.value = '';
+  }
+};
+
+const loadMySite = async () => {
+  try {
+    const res = await axios.get('/api/site/me');
+    siteProfile.value = res.data;
+    if (res.data?.siteKey) {
+      siteKey.value = res.data.siteKey;
+      localStorage.setItem('siteKey', siteKey.value);
+    }
+    siteCustomCss.value = res.data?.customCss || '';
+    applyTheme(res.data);
+  } catch (e) {
+    // ignore
+  }
+};
+
 const refreshAll = async () => {
   loading.value = true;
   try {
+    await loadSiteProfile();
+    const unwrap = (res) => res?.data?.items ?? res?.data ?? [];
     const [nav, eng, post, alb] = await Promise.all([
-      axios.get('/api/navigation/public'),
-      axios.get('/api/search-engines/public'),
-      axios.get('/api/blog/posts/public'),
-      axios.get('/api/gallery/public/albums'),
+      axios.get(`${publicApiBase.value}/navigation`),
+      axios.get(`${publicApiBase.value}/search-engines`),
+      axios.get(`${publicApiBase.value}/blog/posts`, { params: { size: 50 } }),
+      axios.get(`${publicApiBase.value}/gallery/albums`, { params: { size: 24 } }),
     ]);
-    navigationLinks.value = nav.data;
-    searchEngines.value = eng.data;
-    blogPosts.value = post.data;
-    albums.value = alb.data;
-    selectedEngine.value = eng.data.find(e => e.isDefault) || eng.data[0];
+    navigationLinks.value = unwrap(nav);
+    searchEngines.value = unwrap(eng);
+    blogPosts.value = unwrap(post);
+    albums.value = unwrap(alb);
+    selectedEngine.value = searchEngines.value.find(e => e.isDefault) || searchEngines.value[0];
   } finally {
     loading.value = false;
   }
@@ -259,7 +371,9 @@ const login = async () => {
     localStorage.setItem('userRole', userRole.value);
     localStorage.setItem('username', username.value);
     updateAuthHeader();
+    await loadMySite();
     authDialogVisible.value = false;
+    refreshAll();
     ElMessage.success('登录成功');
   } catch (e) {
     ElMessage.error(e.response?.data?.message || '登录失败');
@@ -280,7 +394,9 @@ const register = async () => {
     localStorage.setItem('userRole', userRole.value);
     localStorage.setItem('username', username.value);
     updateAuthHeader();
+    await loadMySite();
     authDialogVisible.value = false;
+    refreshAll();
     ElMessage.success('注册成功并已自动登录');
   } catch (e) {
     ElMessage.error(e.response?.data?.message || '注册失败');
@@ -292,13 +408,29 @@ const logout = () => {
   authToken.value = '';
   localStorage.clear();
   updateAuthHeader();
+  siteKey.value = resolveSiteKey();
+  localStorage.setItem('siteKey', siteKey.value);
+  refreshAll();
   ElMessage.info('已退出登录');
 };
 
 const openLink = (url) => window.open(url, '_blank');
 
-onMounted(() => {
+const openRss = () => {
+  window.open(`${publicApiBase.value}/rss`, '_blank');
+};
+
+watch(siteKey, (value) => {
+  if (!value) return;
+  localStorage.setItem('siteKey', value);
+  refreshAll();
+});
+
+onMounted(async () => {
   updateAuthHeader();
+  if (authToken.value) {
+    await loadMySite();
+  }
   refreshAll();
 });
 </script>
